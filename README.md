@@ -1,4 +1,138 @@
 
+```
+
+2024-05-01
+
+created acc with huggingface.co
+
+this is the GitHub for ai models etc
+
+python -m pip install huggingface_hub
+huggingface-cli login
+
+************
+
+
+pip install --pre torch torchvision torchaudio \
+ --extra-index-url https://download.pytorch.org/whl/nightly/cpu
+
+export CUDA_VISIBLE_DEVICES=0,1
+export CUDA_VISIBLE_DEVICES=0
+python -c 'import torch; print(torch.cuda.is_available());'
+
+pip install pandas
+
+these lib are from huggingface
+pip install tokenizers
+pip install transformers
+pip install sentencepiece
+
+
+GOAL:
+
+CLONE THE FOLLOWING REPO
+RUN THE TRAINED MODEL LOCALLY AND RUN A PROMPT AGAINST IT
+MODEL IS LLAMMA VERSION 1
+the original model are not available on hf
+this is the alternative
+baffo32/decapoda-research-llama-7B-hf
+https://huggingface.co/baffo32/decapoda-research-llama-7B-hf/tree/main
+cloned - looks great
+https://github.com/clinsign/llama
+
+RESULT:
+TRIED ON PIXEL - RUNNING THE MODEL CRASHED - NOT ENOUGH RAM/CPU
+TRIED ON MAC INTEL - WORKED
+
+
+
+
+install git lfs etc - only if putting a repo on huggingface
+https://huggingface.co/docs/hub/en/repositories-getting-started
+
+
+pip install --upgrade transformers==4.33.1
+because the latest was giving errors
+
+
+pip install accelerate
+
+
+looks like this model was created with CUDA enabled
+and cannot run on mac intel with amd radeon
+
+AssertionError: Torch not compiled with CUDA enabled
+
+
+
+
+https://www.reddit.com/r/LocalLLaMA/comments/16pxkhe/how_long_is_it_taking_you_guys_to_run_a_7b_llama/
+
+
+
+test.py
+
+import torch
+
+print(torch.__version__)
+print(torch.cuda.is_available())
+
+#check for gpu
+if torch.backends.mps.is_available():
+   mps_device = torch.device("mps")
+   x = torch.ones(1, device=mps_device)
+   print (x)
+else:
+   print ("MPS device not found.")
+
+inference_example.py
+
+import llama
+
+MODEL = 'baffo32/decapoda-research-llama-7B-hf'
+# MODEL = 'decapoda-research/llama-13b-hf'
+# MODEL = 'decapoda-research/llama-30b-hf'
+# MODEL = 'decapoda-research/llama-65b-hf'
+
+tokenizer = llama.LLaMATokenizer.from_pretrained(MODEL)
+model = llama.LLaMAForCausalLM.from_pretrained(MODEL, low_cpu_mem_usage = True)
+#model.to('cuda')
+model.to('cpu')
+
+# here cuda was replaced with cpu
+
+batch = tokenizer("Yo mama", return_tensors = "pt")
+#print(tokenizer.decode(model.generate(batch["input_ids"].cuda(), max_length=100)[0]))
+
+print(tokenizer.decode(model.generate(batch["input_ids"].cpu(), max_length=100)[0]))
+
+# Expected output: "Yo mama is so fat, she has to buy two seats on the plane"
+
+took about 6 hours and massive cpu/mem on my mac intel
+
+(.venv) kriss-imac:llama kris$ python inference_example.py 
+The tokenizer class you load from this checkpoint is not the same type as the class this function is called from. It may result in unexpected tokenization. 
+The tokenizer class you load from this checkpoint is 'LlamaTokenizer'. 
+The class this function is called from is 'LLaMATokenizer'.
+/Users/kris/Documents/huggingface/.venv/lib/python3.11/site-packages/transformers/utils/generic.py:311: UserWarning: torch.utils._pytree._register_pytree_node is deprecated. Please use torch.utils._pytree.register_pytree_node instead.
+  torch.utils._pytree._register_pytree_node(
+/Users/kris/Documents/huggingface/.venv/lib/python3.11/site-packages/transformers/utils/generic.py:311: UserWarning: torch.utils._pytree._register_pytree_node is deprecated. Please use torch.utils._pytree.register_pytree_node instead.
+  torch.utils._pytree._register_pytree_node(
+Loading checkpoint shards: 100%|███████████████████████████████████████████████████████████████████████████████████| 33/33 [00:21<00:00,  1.52it/s]
+/Users/kris/Documents/huggingface/.venv/lib/python3.11/site-packages/transformers/generation/utils.py:1417: UserWarning: You have modified the pretrained model configuration to control generation. This is a deprecated strategy to control generation and will be removed soon, in a future version. Please use a generation configuration file (see https://huggingface.co/docs/transformers/main_classes/text_generation )
+  warnings.warn(
+Yo mama is so fat, she has to buy two seats on the plane.
+Yo mama is so fat, she has to buy two seats on the plane. Yo mama is so fat, she has to buy two seats on the plane. Yo mama is so fat, she has to buy two seats on the plane. Yo mama is so fat, she has to buy two seats on the plane. Yo mama is so fat,
+
+
+
+
+
+```
+
+
+
+
 _____
 
 > **Credits:** Large parts of the code are based on the [PR](https://github.com/huggingface/transformers/pull/21955) by [Jason Phang](https://github.com/zphang). 
